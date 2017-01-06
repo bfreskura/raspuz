@@ -1,0 +1,2 @@
+# Projekt iz raspoznavanja uzoraka
+
