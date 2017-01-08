@@ -1,13 +1,16 @@
 import argparse
 import os
 import time
+import signal
+import sys
 
 import numpy as np
 from PIL import Image
 from pymba import *
 
 
-def capture_image(frame, channels=3, frame_wait=2000):
+
+def capture_image(frame, channels=3, frame_wait=1000):
     """
     Captures one frame and converts it to a numpy array
     :param frame_wait: Time in miliseconds to give camera in order to process acquired image
@@ -20,19 +23,24 @@ def capture_image(frame, channels=3, frame_wait=2000):
 
     return frame.getBufferByteData()
 
-def convert_to_np_array(img):
+
+def convert_to_np_array(img, frame, channels):
     return np.ndarray(buffer=img,
                       dtype=np.uint8,
                       shape=(frame.width,
                              frame.height,
                              channels))
-def save_to_disk(imgs):
-    # Save images
-    for i, img in enumerate(imgs):
-        np_img = convert_to_np_array(img)
-        img = Image.frombuffer("RGB", (frame0.width, frame0.height), np_img, "raw", "RGB")
-        img.save(os.path.join(args.directory, "{}{}.jpg".format(args.prefix, i)))
 
+
+def save_to_disk(imgs, frame, channels, dir, prefix):
+    # Save images
+    print("Saving images. This could take a while...")
+    for i, img in enumerate(imgs):
+        np_img = convert_to_np_array(img, frame, channels)
+        img = Image.frombuffer("RGB", (frame.width, frame.height), np_img, "raw", "RGB")
+        img.save(os.path.join(dir, "{}{}.jpg".format(prefix, i)))
+
+    print("Saving finished")
 
 def main():
     parser = argparse.ArgumentParser()
@@ -45,7 +53,7 @@ def main():
     parser.add_argument("-p", "--prefix", action="store",
                         help="Image filenames prefix", default="img_")
     parser.add_argument("-e", "--exposure", action="store", type=float,
-                        help="Exposure Time. Minimum: 26, Maximum: 60000000", default=2000000.0)
+                        help="Exposure Time. Minimum: 26, Maximum: 60000000", default=200000.0)
     parser.add_argument("-g", "--gamma", action="store", type=float,
                         help="Gamma value. Minimum: 0.45, Maximum: 1", default=0.7)
     parser.add_argument("-b", "--black", action="store", type=float,
@@ -96,9 +104,14 @@ def main():
 
         if args.img_num < 0:
             i = 0
+            print "Press CTRL + C to stop image acquisition"
             while True:
-                images.append(capture_im())
-                i += 1
+                try:
+                    images.append(capture_im())
+                    i += 1
+                except KeyboardInterrupt:
+                    break
+
         else:
             for i in range(args.img_num):
                 images.append(capture_im())
@@ -108,7 +121,7 @@ def main():
         camera0.flushCaptureQueue()
         camera0.revokeAllFrames()
 
-        save_to_disk(images)
+        save_to_disk(images, frame0, channels=3, dir=args.directory, prefix=args.prefix)
 
 
 if __name__ == "__main__":
