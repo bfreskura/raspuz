@@ -1,14 +1,16 @@
-from PIL import Image
 import argparse
-from pymba import *
 import os
 import time
+
 import numpy as np
+from PIL import Image
+from pymba import *
 
 
-def capture_image(camera, frame, channels=3):
+def capture_image(camera, frame, channels=3, frame_wait=5000):
     """
     Captures one frame and converts it to a numpy array
+    :param frame_wait: Time in miliseconds to give camera in order to process acquired image
     :param camera: Camera Object
     :param frame: Frame object
     :param channels: Color Depth
@@ -19,13 +21,13 @@ def capture_image(camera, frame, channels=3):
     frame.queueFrameCapture()
     camera.runFeatureCommand('AcquisitionStart')
     camera.runFeatureCommand('AcquisitionStop')
-    frame.waitFrameCapture()
+    frame.waitFrameCapture(timeout=frame_wait)
 
     img_data = frame.getBufferByteData()
     data = np.ndarray(buffer=img_data,
                       dtype=np.uint8,
-                      shape=(frame.width,
-                             frame.height,
+                      shape=(frame.height,
+                             frame.width,
                              channels))
     # clean up after capture
     camera.endCapture()
@@ -76,9 +78,10 @@ def main():
         camera0.BlackLevel = args.black
 
         # create new frames for the camera
-        frame0 = camera0.getFrame()  # creates a frame
 
         def capture_im():
+
+            frame0 = camera0.getFrame()  # creates a frame
             image = capture_image(camera0, frame0)
 
             # Save images
