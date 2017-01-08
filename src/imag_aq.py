@@ -100,6 +100,7 @@ def main():
 
         camera0.runFeatureCommand('AcquisitionStop')
         camera0.endCapture()
+        camera0.flushCaptureQueue()
         camera0.revokeAllFrames()
 
 
