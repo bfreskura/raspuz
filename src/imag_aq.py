@@ -67,6 +67,7 @@ def main():
         camera0.AcquisitionMode = 'Continuous'
         camera0.PixelFormat = "RGB8Packed"
         camera0.BalanceWhiteAuto = 'Continuous'
+        camera0.EdgeFilter = "Sharpen1"
         camera0.ExposureTimeAbs = args.exposure
         camera0.Gamma = args.gamma
         camera0.BlackLevel = args.black
