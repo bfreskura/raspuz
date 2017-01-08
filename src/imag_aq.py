@@ -16,16 +16,22 @@ def capture_image(frame, channels=3, frame_wait=2000):
     :return: Image data in a numpy array of shape (height, width, channels)
     """
     frame.waitFrameCapture(timeout=frame_wait)
+    frame.queueFrameCapture()
 
-    img_data = frame.getBufferByteData()
-    data = np.ndarray(buffer=img_data,
+    return frame.getBufferByteData()
+
+def convert_to_np_array(img):
+    return np.ndarray(buffer=img,
                       dtype=np.uint8,
                       shape=(frame.width,
                              frame.height,
                              channels))
-    # clean up after capture
-    frame.queueFrameCapture()
-    return data
+def save_to_disk(imgs):
+    # Save images
+    for i, img in enumerate(imgs):
+        np_img = convert_to_np_array(img)
+        img = Image.frombuffer("RGB", (frame0.width, frame0.height), np_img, "raw", "RGB")
+        img.save(os.path.join(args.directory, "{}{}.jpg".format(args.prefix, i)))
 
 
 def main():
@@ -75,14 +81,13 @@ def main():
         # create new frames for the camera
         frame0 = camera0.getFrame()  # creates a frame
 
+        # Temporary Images array
+        images = []
+
         def capture_im():
-
-            image = capture_image(frame0)
-
-            # Save images
-            img = Image.frombuffer("RGB", (frame0.width, frame0.height), image, "raw", "RGB")
-            img.save(os.path.join(args.directory, "{}{}.jpg".format(args.prefix, i)))
             time.sleep(float(args.frequency))
+
+            return capture_image(frame0)
 
         frame0.announceFrame()
         camera0.startCapture()
@@ -92,16 +97,18 @@ def main():
         if args.img_num < 0:
             i = 0
             while True:
-                capture_im()
+                images.append(capture_im())
                 i += 1
         else:
             for i in range(args.img_num):
-                capture_im()
+                images.append(capture_im())
 
         camera0.runFeatureCommand('AcquisitionStop')
         camera0.endCapture()
         camera0.flushCaptureQueue()
         camera0.revokeAllFrames()
+
+        save_to_disk(images)
 
 
 if __name__ == "__main__":
