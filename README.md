@@ -1,5 +1,9 @@
 # Projekt iz raspoznavanja uzoraka
 
+## About the project
+The goal of the project is to demonstrate the recording capabilities of the
+[Manta G033C IRC PoE](https://www.alliedvision.com/en/products/cameras.html?nc#spectrum%2F-1%2FmaxFrameRate%2F-1%2FresolutionCalc%2F-1%2Fcolor%2F-1%2FsensorSize%2F-1%2Fsensor%2F-1%2Fseries%2F11%2Ftext%2F%2Fintf%2F-1%2Finterfacefilter%2F-1%2F)camera model. 
+
 ## Installation
 1. Install all python (pip) packages from the `requirements.txt` file
 
