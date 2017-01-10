@@ -19,9 +19,11 @@ def capture_image(frame, channels=3, frame_wait=1000):
     :return: Image data in a numpy array of shape (height, width, channels)
     """
     frame.waitFrameCapture(timeout=frame_wait)
+    img = frame.getBufferByteData()
+    data = convert_to_np_array(img, frame, channels)
     frame.queueFrameCapture()
 
-    return frame.getBufferByteData()
+    return np.copy(data)
 
 
 def convert_to_np_array(img, frame, channels):
@@ -36,8 +38,7 @@ def save_to_disk(imgs, frame, channels, dir, prefix):
     # Save images
     print("Saving images. This could take a while...")
     for i, img in enumerate(imgs):
-        np_img = convert_to_np_array(img, frame, channels)
-        img = Image.frombuffer("RGB", (frame.width, frame.height), np_img, "raw", "RGB")
+        img = Image.frombuffer("RGB", (frame.width, frame.height), img, "raw", "RGB")
         img.save(os.path.join(dir, "{}{}.jpg".format(prefix, i)))
 
     print("Saving finished")
