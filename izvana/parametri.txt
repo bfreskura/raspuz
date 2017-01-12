@@ -1,0 +1,4 @@
+Ekspozicija 1200
+frekvencija 0.03
+gamma 0.7
+black level 128

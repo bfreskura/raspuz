@@ -1,0 +1,2 @@
+ekpozicija 280000
+frekvencija 0.07

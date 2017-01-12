@@ -71,58 +71,64 @@ def main():
             system.runFeatureCommand("GeVDiscoveryAllOnce")
             time.sleep(0.2)
         cameraIds = vimba.getCameraIds()
+        cameras = []
+        images = dict()
         for cameraId in cameraIds:
             print 'Camera ID:', cameraId
+            save_dir = os.path.join(args.directory, cameraId)
+            if not os.path.exists(save_dir):
+                os.makedirs(save_dir)
 
-        # get and open a camera
-        camera0 = vimba.getCamera(cameraIds[0])
-        camera0.openCamera()
+            # get and open a camera
+            camera = vimba.getCamera(cameraId)
+            camera.openCamera()
 
-        # set the value of a feature
-        camera0.AcquisitionMode = 'Continuous'
-        camera0.PixelFormat = "RGB8Packed"
-        camera0.BalanceWhiteAuto = 'Continuous'
-        camera0.EdgeFilter = "Sharpen1"
-        camera0.ExposureTimeAbs = args.exposure
-        camera0.Gamma = args.gamma
-        camera0.BlackLevel = args.black
+            # set the value of a feature
+            camera.AcquisitionMode = 'Continuous'
+            camera.PixelFormat = "RGB8Packed"
+            camera.BalanceWhiteAuto = 'Continuous'
+            camera.EdgeFilter = "Sharpen1"
+            camera.ExposureTimeAbs = args.exposure
+            camera.Gamma = args.gamma
+            camera.BlackLevel = args.black
 
-        # create new frames for the camera
-        frame0 = camera0.getFrame()  # creates a frame
+            # create new frames for the camera
+            frame = camera.getFrame()  # creates a frame
 
-        # Temporary Images array
-        images = []
+            frame.announceFrame()
+            camera.startCapture()
+            frame.queueFrameCapture()
+            camera.runFeatureCommand('AcquisitionStart')
 
-        def capture_im():
+            cameras.append((camera, frame, cameraId, save_dir))
+            images[cameraId] = []
+
+        def capture_im(frame):
             time.sleep(float(args.frequency))
 
-            return capture_image(frame0)
-
-        frame0.announceFrame()
-        camera0.startCapture()
-        frame0.queueFrameCapture()
-        camera0.runFeatureCommand('AcquisitionStart')
+            return capture_image(frame)
 
         if args.img_num < 0:
             i = 0
             print "Press CTRL + C to stop image acquisition"
             while True:
                 try:
-                    images.append(capture_im())
+                    for c, f, id, d in cameras:
+                        images[id].append(capture_im(f))
                     i += 1
                 except KeyboardInterrupt:
                     break
-
         else:
             for i in range(args.img_num):
-                images.append(capture_im())
+                for c, f, id, d in cameras:
+                    images[id].append(capture_im(f))
 
-        camera0.runFeatureCommand('AcquisitionStop')
-        camera0.endCapture()
-        camera0.flushCaptureQueue()
-        camera0.revokeAllFrames()
-
-        save_to_disk(images, frame0, channels=3, dir=args.directory, prefix=args.prefix)
+        for c, f, id, d in cameras:
+            c.runFeatureCommand('AcquisitionStop')
+            c.endCapture()
+            c.flushCaptureQueue()
+            c.revokeAllFrames()
+            save_to_disk(images[id], f, channels=3, dir=d, prefix=args.prefix)
 
 
 if __name__ == "__main__":

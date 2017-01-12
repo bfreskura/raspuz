@@ -1,0 +1,4 @@
+Ekpozicija 68000
+frekvencija 0.07
+gamma 1
+black level 15
