@@ -3,6 +3,7 @@ import os
 import time
 import signal
 import sys
+import cv2
 
 import numpy as np
 from PIL import Image
@@ -34,20 +35,30 @@ def convert_to_np_array(img, frame, channels):
                              channels))
 
 
-def save_to_disk(imgs, frame, channels, dir, prefix):
+def save_to_disk(imgs, frame, channels, dir, prefix, isVideo, fps):
     # Save images
-    print("Saving images. This could take a while...")
-    for i, img in enumerate(imgs):
-        img = Image.frombuffer("RGB", (frame.width, frame.height), img, "raw", "RGB")
-        img.save(os.path.join(dir, "{}{}.jpg".format(prefix, i)))
+    if isVideo:
+        fps = fps/1.5
+        print("Saving video. Fps = " + str(fps) + ". This could take a while...")
+        fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+
+        out = cv2.VideoWriter(os.path.join(dir, "{}.avi".format(prefix)), fourcc, fps, (frame.width, frame.height))
+        for i, img in enumerate(imgs):
+            out.write(img.reshape(frame.height, frame.width, 3))
+    else:
+        print("Saving images. This could take a while...")
+        for i, img in enumerate(imgs):
+            img = Image.frombuffer("RGB", (frame.width, frame.height), img, "raw", "RGB")
+            img.save(os.path.join(dir, "{}{}.jpg".format(prefix, i)))
 
     print("Saving finished")
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-f", "--frequency", action="store", default=5, help="Capture frequency")
+    parser.add_argument("-f", "--frequency", action="store", type=float, default=5, help="Capture frequency")
     parser.add_argument("-d", "--directory", action="store",
                         help="Save Directory")
+    parser.add_argument("-v", "--video", action="store_true", help="Use video instead of multiple images" )
     parser.add_argument("-n", "--img_num", action="store",
                         help="Number of images to capture. Negative value will capture until the user quits the program",
                         type=int, default=1)
@@ -128,7 +139,7 @@ def main():
             c.endCapture()
             c.flushCaptureQueue()
             c.revokeAllFrames()
-            save_to_disk(images[id], f, channels=3, dir=d, prefix=args.prefix)
+            save_to_disk(images[id], f, channels=3, dir=d, prefix=args.prefix, isVideo=args.video, fps=int(1/args.frequency))
 
 
 if __name__ == "__main__":
